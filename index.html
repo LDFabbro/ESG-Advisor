@@ -1,0 +1,1674 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ESG Advisor — Itaú BBA</title>
+
+<style>
+  :root {
+    --itau-orange: #EC7000;
+    --itau-orange-light: #FF8C1A;
+    --itau-orange-pale: #FFF0E0;
+    --itau-black: #0A0A0A;
+    --itau-dark: #111111;
+    --itau-surface: #181818;
+    --itau-card: #1E1E1E;
+    --itau-border: #2A2A2A;
+    --itau-text: #F0F0F0;
+    --itau-text-muted: #888888;
+    --itau-text-dim: #555555;
+    --green: #22C55E;
+    --green-dim: #15803D;
+    --yellow: #EAB308;
+    --red: #EF4444;
+    --blue: #3B82F6;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: var(--font);
+    background: var(--itau-black);
+    color: var(--itau-text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    max-width: 430px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  /* ---- SPLASH ---- */
+  #splash {
+    position: fixed; inset: 0; z-index: 999;
+    background: var(--itau-black);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 24px;
+    transition: opacity 0.5s ease;
+  }
+  #splash.hidden { opacity: 0; pointer-events: none; display: none; }
+  .splash-logo {
+    width: 80px; height: 80px;
+    background: var(--itau-orange);
+    border-radius: 22px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 700; color: white;
+    letter-spacing: -1px;
+    box-shadow: 0 0 60px rgba(236,112,0,0.4);
+  }
+  .splash-title { font-size: 22px; font-weight: 600; color: white; letter-spacing: -0.5px; }
+  .splash-sub { font-size: 13px; color: var(--itau-text-muted); letter-spacing: 2px; text-transform: uppercase; }
+  .splash-bar {
+    width: 160px; height: 3px; background: var(--itau-border);
+    border-radius: 10px; overflow: hidden; margin-top: 16px;
+  }
+  .splash-fill {
+    height: 100%; background: var(--itau-orange);
+    width: 0%; border-radius: 10px;
+    animation: fill 1.8s ease forwards;
+  }
+  @keyframes fill { to { width: 100%; } }
+
+  /* ---- SCREEN SYSTEM ---- */
+  .screen { display: none; flex-direction: column; min-height: 100vh; animation: fadeIn 0.3s ease; }
+  .screen.active { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ---- TOP BAR ---- */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px 12px;
+    position: sticky; top: 0; z-index: 50;
+    background: linear-gradient(180deg, var(--itau-black) 80%, transparent);
+  }
+  .topbar-logo {
+    width: 42px; height: 42px; background: var(--itau-orange);
+    border-radius: 11px; display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700; color: white; letter-spacing: -1px;
+  }
+  .topbar-title { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
+  .topbar-sub { font-size: 11px; color: var(--itau-text-muted); }
+  .topbar-action {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--itau-surface); border: 1px solid var(--itau-border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .topbar-action:hover { background: var(--itau-card); }
+
+  /* ---- BOTTOM NAV ---- */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 430px;
+    background: rgba(17,17,17,0.95);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid var(--itau-border);
+    display: flex; z-index: 100;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 10px 4px 12px; cursor: pointer;
+    transition: all 0.2s; gap: 4px;
+  }
+  .nav-icon { font-size: 22px; transition: transform 0.2s; }
+  .nav-label { font-size: 10px; font-weight: 500; color: var(--itau-text-muted); transition: color 0.2s; }
+  .nav-item.active .nav-label { color: var(--itau-orange); }
+  .nav-item.active .nav-icon { transform: scale(1.15); }
+  .nav-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--itau-orange); display: none;
+  }
+  .nav-item.active .nav-dot { display: block; }
+
+  /* ---- SCROLL AREA ---- */
+  .scroll-area { flex: 1; overflow-y: auto; padding-bottom: 90px; }
+  .scroll-area::-webkit-scrollbar { display: none; }
+
+  /* ---- SECTION LABEL ---- */
+  .section-label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 2px; color: var(--itau-orange);
+    padding: 20px 20px 10px;
+  }
+
+  /* ---- HERO CARD ---- */
+  .hero-card {
+    margin: 0 20px 4px;
+    background: linear-gradient(135deg, #1A1A1A 0%, #0D0D0D 100%);
+    border: 1px solid var(--itau-border);
+    border-radius: var(--radius);
+    padding: 22px 20px;
+    position: relative; overflow: hidden;
+  }
+  .hero-card::before {
+    content: '';
+    position: absolute; top: -30px; right: -30px;
+    width: 120px; height: 120px;
+    background: radial-gradient(circle, rgba(236,112,0,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-date { font-size: 11px; color: var(--itau-text-muted); margin-bottom: 8px; }
+  .hero-title { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 4px; line-height: 1.2; }
+  .hero-sub { font-size: 13px; color: var(--itau-text-muted); }
+  .hero-pills { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .pill {
+    font-size: 10px; font-weight: 600; padding: 4px 10px;
+    border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .pill-orange { background: rgba(236,112,0,0.15); color: var(--itau-orange); border: 1px solid rgba(236,112,0,0.3); }
+  .pill-green { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
+  .pill-yellow { background: rgba(234,179,8,0.1); color: var(--yellow); border: 1px solid rgba(234,179,8,0.25); }
+  .pill-red { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid rgba(239,68,68,0.25); }
+  .pill-blue { background: rgba(59,130,246,0.1); color: var(--blue); border: 1px solid rgba(59,130,246,0.25); }
+
+  /* ---- SUMMARY STRIP ---- */
+  .summary-strip {
+    display: flex; gap: 12px; padding: 12px 20px; overflow-x: auto;
+  }
+  .summary-strip::-webkit-scrollbar { display: none; }
+  .summary-tile {
+    min-width: 100px; background: var(--itau-surface);
+    border: 1px solid var(--itau-border);
+    border-radius: var(--radius-sm); padding: 14px 14px;
+    cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+  }
+  .summary-tile:hover { border-color: var(--itau-orange); }
+  .tile-icon { font-size: 22px; margin-bottom: 6px; }
+  .tile-label { font-size: 11px; color: var(--itau-text-muted); margin-bottom: 4px; }
+  .tile-value { font-size: 18px; font-weight: 700; }
+  .tile-value.ok { color: var(--green); }
+  .tile-value.warn { color: var(--yellow); }
+  .tile-value.alert { color: var(--red); }
+
+  /* ---- CARD LIST ---- */
+  .card-list { padding: 0 20px; display: flex; flex-direction: column; gap: 12px; }
+  .item-card {
+    background: var(--itau-surface); border: 1px solid var(--itau-border);
+    border-radius: var(--radius); padding: 16px;
+    cursor: pointer; transition: all 0.25s; position: relative;
+  }
+  .item-card:hover, .item-card:active { border-color: var(--itau-orange); background: var(--itau-card); }
+  .item-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .item-card-title { font-size: 14px; font-weight: 600; line-height: 1.3; }
+  .item-card-meta { font-size: 11px; color: var(--itau-text-muted); margin-top: 4px; }
+  .item-card-body { font-size: 12px; color: var(--itau-text-muted); margin-top: 10px; line-height: 1.6; }
+  .item-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+  .badge {
+    font-size: 10px; font-weight: 700; padding: 3px 9px;
+    border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .badge-aa { background: rgba(34,197,94,0.15); color: var(--green); }
+  .badge-a  { background: rgba(34,197,94,0.1); color: #86EFAC; }
+  .badge-b  { background: rgba(234,179,8,0.15); color: var(--yellow); }
+  .badge-c  { background: rgba(239,68,68,0.15); color: var(--red); }
+  .badge-sector { background: var(--itau-border); color: var(--itau-text-muted); }
+  .chevron { color: var(--itau-text-dim); font-size: 18px; }
+
+  /* ---- SCORE BAR ---- */
+  .score-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .score-label { font-size: 11px; color: var(--itau-text-muted); width: 70px; flex-shrink: 0; }
+  .score-bar { flex: 1; height: 5px; background: var(--itau-border); border-radius: 10px; overflow: hidden; }
+  .score-fill { height: 100%; border-radius: 10px; }
+  .score-fill-e { background: var(--green); }
+  .score-fill-s { background: var(--blue); }
+  .score-fill-g { background: var(--itau-orange); }
+  .score-num { font-size: 11px; font-weight: 600; width: 28px; text-align: right; }
+
+  /* ---- ALERT CARD ---- */
+  .alert-card {
+    border-radius: var(--radius); padding: 14px 16px;
+    border-left: 3px solid; margin-bottom: 0;
+    cursor: pointer; transition: opacity 0.2s;
+  }
+  .alert-card:active { opacity: 0.8; }
+  .alert-high { background: rgba(239,68,68,0.07); border-color: var(--red); }
+  .alert-med  { background: rgba(234,179,8,0.07); border-color: var(--yellow); }
+  .alert-low  { background: rgba(34,197,94,0.07); border-color: var(--green); }
+  .alert-title { font-size: 13px; font-weight: 600; }
+  .alert-body  { font-size: 12px; color: var(--itau-text-muted); margin-top: 4px; line-height: 1.5; }
+  .alert-time  { font-size: 10px; color: var(--itau-text-dim); margin-top: 8px; }
+
+  /* ---- DETAIL VIEW ---- */
+  .detail-hero {
+    background: linear-gradient(160deg, #1C1C1C 0%, var(--itau-black) 100%);
+    border-bottom: 1px solid var(--itau-border);
+    padding: 20px 20px 24px;
+  }
+  .detail-back {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; color: var(--itau-orange);
+    cursor: pointer; margin-bottom: 16px;
+    background: none; border: none;
+  }
+  .detail-company { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+  .detail-sector { font-size: 12px; color: var(--itau-text-muted); margin-top: 2px; }
+  .detail-scores {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 12px; margin-top: 20px;
+  }
+  .detail-score-box {
+    background: var(--itau-surface); border: 1px solid var(--itau-border);
+    border-radius: var(--radius-sm); padding: 14px 12px; text-align: center;
+  }
+  .detail-score-label { font-size: 10px; color: var(--itau-text-muted); text-transform: uppercase; letter-spacing: 1px; }
+  .detail-score-val { font-size: 28px; font-weight: 700; margin-top: 4px; }
+  .detail-score-grade { font-size: 11px; font-weight: 600; margin-top: 2px; }
+  .detail-tabs { display: flex; border-bottom: 1px solid var(--itau-border); padding: 0 20px; }
+  .detail-tab {
+    font-size: 13px; font-weight: 500; padding: 14px 16px;
+    color: var(--itau-text-muted); cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .detail-tab.active { color: var(--itau-orange); border-color: var(--itau-orange); }
+  .detail-body { padding: 20px; flex: 1; overflow-y: auto; padding-bottom: 90px; }
+  .detail-section-title { font-size: 13px; font-weight: 600; color: var(--itau-orange); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .info-row {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid var(--itau-border);
+    gap: 12px;
+  }
+  .info-row:last-child { border-bottom: none; }
+  .info-key { font-size: 12px; color: var(--itau-text-muted); }
+  .info-val { font-size: 12px; font-weight: 500; text-align: right; }
+  .full-bar { height: 8px; background: var(--itau-border); border-radius: 10px; overflow: hidden; margin-bottom: 6px; }
+  .full-fill { height: 100%; border-radius: 10px; background: var(--itau-orange); }
+  .maturity-row { margin-bottom: 16px; }
+  .maturity-row-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; }
+  .maturity-row-label span:first-child { color: var(--itau-text-muted); }
+  .maturity-row-label span:last-child { font-weight: 600; }
+
+  /* ---- DASHBOARD ---- */
+  .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px 4px; }
+  .dash-tile {
+    background: var(--itau-surface); border: 1px solid var(--itau-border);
+    border-radius: var(--radius); padding: 18px 16px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .dash-tile:hover { border-color: var(--itau-orange); }
+  .dash-tile.wide { grid-column: 1 / -1; }
+  .dash-tile-icon { font-size: 26px; margin-bottom: 10px; }
+  .dash-tile-label { font-size: 11px; color: var(--itau-text-muted); margin-bottom: 4px; }
+  .dash-tile-value { font-size: 26px; font-weight: 700; letter-spacing: -1px; }
+  .dash-tile-sub { font-size: 11px; color: var(--itau-text-muted); margin-top: 2px; }
+  .trend-up { color: var(--green); font-size: 11px; font-weight: 600; }
+  .trend-down { color: var(--red); font-size: 11px; font-weight: 600; }
+  .mini-chart { display: flex; align-items: flex-end; gap: 3px; height: 36px; margin-top: 12px; }
+  .mini-bar { flex: 1; background: var(--itau-orange); border-radius: 3px 3px 0 0; opacity: 0.6; transition: opacity 0.2s; }
+  .mini-bar:last-child { opacity: 1; }
+
+  /* ---- SEARCH ---- */
+  .search-wrap { padding: 12px 20px; }
+  .search-box {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--itau-surface); border: 1px solid var(--itau-border);
+    border-radius: var(--radius-sm); padding: 12px 16px;
+    transition: border-color 0.2s;
+  }
+  .search-box:focus-within { border-color: var(--itau-orange); }
+  .search-input {
+    flex: 1; background: none; border: none; outline: none;
+    color: var(--itau-text); font-size: 14px; font-family: var(--font);
+  }
+  .search-input::placeholder { color: var(--itau-text-dim); }
+
+  /* ---- FILTER CHIPS ---- */
+  .filter-chips { display: flex; gap: 8px; padding: 0 20px 16px; overflow-x: auto; }
+  .filter-chips::-webkit-scrollbar { display: none; }
+  .chip {
+    font-size: 12px; font-weight: 500; padding: 6px 14px;
+    border-radius: 20px; border: 1px solid var(--itau-border);
+    background: var(--itau-surface); color: var(--itau-text-muted);
+    cursor: pointer; white-space: nowrap; transition: all 0.2s;
+  }
+  .chip.active { background: rgba(236,112,0,0.12); border-color: var(--itau-orange); color: var(--itau-orange); }
+
+  /* ---- PROFILE ---- */
+  .profile-header {
+    background: linear-gradient(160deg, #1A1A1A 0%, var(--itau-black) 100%);
+    padding: 28px 20px; text-align: center;
+    border-bottom: 1px solid var(--itau-border);
+  }
+  .profile-avatar {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--itau-orange), #FF8C1A);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 700; color: white;
+    margin: 0 auto 14px;
+  }
+  .profile-name { font-size: 20px; font-weight: 700; }
+  .profile-role { font-size: 12px; color: var(--itau-text-muted); margin-top: 4px; }
+  .profile-area {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(236,112,0,0.1); border: 1px solid rgba(236,112,0,0.2);
+    border-radius: 20px; padding: 5px 12px; margin-top: 10px;
+    font-size: 11px; color: var(--itau-orange); font-weight: 600;
+  }
+  .menu-list { padding: 0 20px; }
+  .menu-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 0; border-bottom: 1px solid var(--itau-border);
+    cursor: pointer;
+  }
+  .menu-item:last-child { border-bottom: none; }
+  .menu-item-left { display: flex; align-items: center; gap: 14px; }
+  .menu-item-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: var(--itau-surface); display: flex; align-items: center;
+    justify-content: center; font-size: 18px;
+  }
+  .menu-item-title { font-size: 14px; font-weight: 500; }
+  .menu-item-sub { font-size: 11px; color: var(--itau-text-muted); margin-top: 2px; }
+
+  /* ---- NOTIFICATION DOT ---- */
+  .notif-dot {
+    width: 8px; height: 8px; background: var(--red);
+    border-radius: 50%; position: absolute; top: 8px; right: 8px;
+  }
+
+  /* ---- MODAL OVERLAY ---- */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.7); display: none;
+    align-items: flex-end;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-sheet {
+    background: #1A1A1A; border-radius: 20px 20px 0 0;
+    width: 100%; max-width: 430px; margin: 0 auto;
+    padding: 20px 20px 40px;
+    animation: slideUp 0.3s ease;
+    max-height: 80vh; overflow-y: auto;
+  }
+  .modal-sheet::-webkit-scrollbar { display: none; }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-handle { width: 40px; height: 4px; background: var(--itau-border); border-radius: 10px; margin: 0 auto 20px; }
+  .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+
+  /* ---- UTILITIES ---- */
+  .mt8 { margin-top: 8px; }
+  .mt12 { margin-top: 12px; }
+  .mt16 { margin-top: 16px; }
+  .mt20 { margin-top: 20px; }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .flex-between { display: flex; align-items: center; justify-content: space-between; }
+  .divider { height: 1px; background: var(--itau-border); margin: 16px 0; }
+  .text-muted { color: var(--itau-text-muted); font-size: 12px; }
+  .orange { color: var(--itau-orange); }
+  .green  { color: var(--green); }
+  .red    { color: var(--red); }
+  .yellow { color: var(--yellow); }
+  .btn-primary {
+    background: var(--itau-orange); color: white; border: none;
+    border-radius: var(--radius-sm); padding: 14px 24px;
+    font-size: 14px; font-weight: 600; font-family: var(--font);
+    cursor: pointer; width: 100%; transition: opacity 0.2s;
+  }
+  .btn-primary:active { opacity: 0.85; }
+  .tag-segment {
+    font-size: 10px; font-weight: 600; padding: 2px 7px;
+    border-radius: 4px; background: var(--itau-border);
+    color: var(--itau-text-muted); text-transform: uppercase;
+  }
+
+  /* Horizontal scroll card row */
+  .hscroll { display: flex; gap: 12px; padding: 0 20px; overflow-x: auto; }
+  .hscroll::-webkit-scrollbar { display: none; }
+  .hcard {
+    min-width: 180px; background: var(--itau-surface);
+    border: 1px solid var(--itau-border); border-radius: var(--radius);
+    padding: 16px; flex-shrink: 0; cursor: pointer; transition: border-color 0.2s;
+  }
+  .hcard:hover { border-color: var(--itau-orange); }
+  .hcard-label { font-size: 11px; color: var(--itau-text-muted); }
+  .hcard-company { font-size: 15px; font-weight: 700; margin: 4px 0; }
+  .hcard-score { font-size: 28px; font-weight: 700; color: var(--itau-orange); }
+
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-logo">itaú</div>
+  <div>
+    <div class="splash-title">ESG Advisor</div>
+    <div class="splash-sub">Crédito ESG · Itaú BBA</div>
+  </div>
+  <div class="splash-bar"><div class="splash-fill"></div></div>
+</div>
+
+<!-- ============================================================ HOME ============================================================ -->
+<div class="screen active" id="screen-home">
+  <div class="topbar">
+    <div class="row">
+      <div class="topbar-logo">itaú</div>
+      <div>
+        <div class="topbar-title">ESG Advisor</div>
+        <div class="topbar-sub">Crédito ESG · Itaú BBA</div>
+      </div>
+    </div>
+    <div class="topbar-action" style="position:relative" onclick="openModal('modal-notif')">
+      🔔
+      <div class="notif-dot"></div>
+    </div>
+  </div>
+
+  <div class="scroll-area">
+
+    <!-- Hero -->
+    <div class="hero-card">
+      <div class="hero-date">Março 2026 · Visão Geral</div>
+      <div class="hero-title">Painel ESG<br>da Carteira</div>
+      <div class="hero-sub">Análises atualizadas para 147 empresas</div>
+      <div class="hero-pills">
+        <span class="pill pill-green">87 Aprovadas</span>
+        <span class="pill pill-yellow">34 Em Revisão</span>
+        <span class="pill pill-red">26 Críticas</span>
+      </div>
+    </div>
+
+    <!-- Summary strip -->
+    <div class="summary-strip">
+      <div class="summary-tile" onclick="navigate('dashboard')">
+        <div class="tile-icon">📊</div>
+        <div class="tile-label">Score ESG Médio</div>
+        <div class="tile-value ok">68,4</div>
+      </div>
+      <div class="summary-tile" onclick="navigate('alertas')">
+        <div class="tile-icon">⚠️</div>
+        <div class="tile-label">Alertas Ativos</div>
+        <div class="tile-value alert">12</div>
+      </div>
+      <div class="summary-tile" onclick="navigate('empresas')">
+        <div class="tile-icon">🏢</div>
+        <div class="tile-label">Empresas</div>
+        <div class="tile-value">147</div>
+      </div>
+    </div>
+
+    <!-- Destaques recentes -->
+    <div class="section-label">Análises Recentes</div>
+    <div class="card-list">
+
+      <div class="item-card" onclick="openDetail('petrobras')">
+        <div class="item-card-header">
+          <div>
+            <div class="row" style="gap:8px; margin-bottom:6px">
+              <span class="tag-segment">Infra &amp; Energia</span>
+              <span class="tag-segment">Energia</span>
+            </div>
+            <div class="item-card-title">Petrobras S.A.</div>
+            <div class="item-card-meta">Análise ESG · Atualizada 2 dias atrás</div>
+          </div>
+          <div style="text-align:right">
+            <div class="badge badge-b">Rating B</div>
+            <div style="font-size:22px; font-weight:700; color:var(--itau-orange); margin-top:4px">62</div>
+          </div>
+        </div>
+        <div class="score-row">
+          <span class="score-label">Ambiental</span>
+          <div class="score-bar"><div class="score-fill score-fill-e" style="width:55%"></div></div>
+          <span class="score-num">55</span>
+        </div>
+        <div class="score-row">
+          <span class="score-label">Social</span>
+          <div class="score-bar"><div class="score-fill score-fill-s" style="width:70%"></div></div>
+          <span class="score-num">70</span>
+        </div>
+        <div class="score-row">
+          <span class="score-label">Governança</span>
+          <div class="score-bar"><div class="score-fill score-fill-g" style="width:62%"></div></div>
+          <span class="score-num">62</span>
+        </div>
+        <div class="item-card-footer">
+          <span class="pill pill-yellow">Em Revisão</span>
+          <span class="chevron">›</span>
+        </div>
+      </div>
+
+      <div class="item-card" onclick="openDetail('vale')">
+        <div class="item-card-header">
+          <div>
+            <div class="row" style="gap:8px; margin-bottom:6px">
+              <span class="tag-segment">Large</span>
+              <span class="tag-segment">Mineração</span>
+            </div>
+            <div class="item-card-title">Vale S.A.</div>
+            <div class="item-card-meta">Análise ESG · Atualizada 5 dias atrás</div>
+          </div>
+          <div style="text-align:right">
+            <div class="badge badge-b">Rating B</div>
+            <div style="font-size:22px; font-weight:700; color:var(--itau-orange); margin-top:4px">58</div>
+          </div>
+        </div>
+        <div class="score-row">
+          <span class="score-label">Ambiental</span>
+          <div class="score-bar"><div class="score-fill score-fill-e" style="width:48%"></div></div>
+          <span class="score-num">48</span>
+        </div>
+        <div class="score-row">
+          <span class="score-label">Social</span>
+          <div class="score-bar"><div class="score-fill score-fill-s" style="width:60%"></div></div>
+          <span class="score-num">60</span>
+        </div>
+        <div class="score-row">
+          <span class="score-label">Governança</span>
+          <div class="score-bar"><div class="score-fill score-fill-g" style="width:65%"></div></div>
+          <span class="score-num">65</span>
+        </div>
+        <div class="item-card-footer">
+          <span class="pill pill-red">Controvérsia Ativa</span>
+          <span class="chevron">›</span>
+        </div>
+      </div>
+
+      <div class="item-card" onclick="openDetail('suzano')">
+        <div class="item-card-header">
+          <div>
+            <div class="row" style="gap:8px; margin-bottom:6px">
+              <span class="tag-segment">Large</span>
+              <span class="tag-segment">Celulose</span>
+            </div>
+            <div class="item-card-title">Suzano S.A.</div>
+            <div class="item-card-meta">Análise ESG · Atualizada 1 semana atrás</div>
+          </div>
+          <div style="text-align:right">
+            <div class="badge badge-aa">Rating AA</div>
+            <div style="font-size:22px; font-weight:700; color:var(--green); margin-top:4px">84</div>
+          </div>
+        </div>
+        <div class="score-row">
+          <span class="score-label">Ambiental</span>
+          <div class="score-bar"><div class="score-fill score-fill-e" style="width:90%"></div></div>
+          <span class="score-num">90</span>
+        </div>
+        <div class="score-row">
+          <span class="score-label">Social</span>
+          <div class="score-bar"><div class="score-fill score-fill-s" style="width:80%"></div></div>
+          <span class="score-num">80</span>
+        </div>
+        <div class="score-row">
+          <span class="score-label">Governança</span>
+          <div class="score-bar"><div class="score-fill score-fill-g" style="width:82%"></div></div>
+          <span class="score-num">82</span>
+        </div>
+        <div class="item-card-footer">
+          <span class="pill pill-green">Baixo Risco</span>
+          <span class="chevron">›</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Acesso rápido -->
+    <div class="section-label">Acesso Rápido</div>
+    <div class="hscroll">
+      <div class="hcard" onclick="navigate('empresas')">
+        <div class="hcard-label">Total analisado</div>
+        <div class="hcard-company">Empresas</div>
+        <div class="hcard-score">147</div>
+        <div class="text-muted mt8">Grandes, Médias e Agro</div>
+      </div>
+      <div class="hcard" onclick="navigate('alertas')">
+        <div class="hcard-label">Pendentes</div>
+        <div class="hcard-company">Alertas</div>
+        <div class="hcard-score" style="color:var(--red)">12</div>
+        <div class="text-muted mt8">Controvérsias e Riscos</div>
+      </div>
+      <div class="hcard" onclick="navigate('dashboard')">
+        <div class="hcard-label">Carteira</div>
+        <div class="hcard-company">Dashboard</div>
+        <div class="hcard-score" style="color:var(--itau-orange)">↗</div>
+        <div class="text-muted mt8">Visão consolidada</div>
+      </div>
+    </div>
+
+    <div style="height:20px"></div>
+  </div>
+</div>
+
+<!-- ============================================================ EMPRESAS ============================================================ -->
+<div class="screen" id="screen-empresas">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Empresas</div>
+      <div class="topbar-sub">147 clientes analisados</div>
+    </div>
+  </div>
+
+  <div class="search-wrap">
+    <div class="search-box">
+      <span>🔍</span>
+      <input class="search-input" placeholder="Buscar empresa ou setor…">
+    </div>
+  </div>
+
+  <div class="filter-chips">
+    <div class="chip active">Todos</div>
+    <div class="chip">Infra &amp; Energia</div>
+    <div class="chip">Large</div>
+    <div class="chip">Middle</div>
+    <div class="chip">Agro</div>
+    <div class="chip">Rating AA</div>
+    <div class="chip">Em Alerta</div>
+  </div>
+
+  <div class="scroll-area" style="padding-top:0">
+    <div class="card-list" style="padding-top:4px">
+
+      <div class="item-card" onclick="openDetail('suzano')">
+        <div class="item-card-header">
+          <div>
+            <div class="row" style="gap:8px; margin-bottom:4px">
+              <span class="tag-segment">Large</span>
+              <span class="tag-segment">Celulose</span>
+            </div>
+            <div class="item-card-title">Suzano S.A.</div>
+            <div class="item-card-meta">CNPJ 16.404.287/0001‑55</div>
+          </div>
+          <div style="text-align:right; flex-shrink:0">
+            <div class="badge badge-aa">AA</div>
+            <div style="font-size:24px; font-weight:700; color:var(--green); margin-top:2px">84</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:7px; margin-top:10px; padding-top:10px; border-top:1px solid var(--itau-border)">
+          <div style="width:24px; height:24px; border-radius:50%; background:var(--itau-orange); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:white; flex-shrink:0">AA</div>
+          <span style="font-size:11px; color:var(--itau-text-muted);">Analista:</span>
+          <span style="font-size:12px; font-weight:600;">Aline Aguiar</span>
+        </div>
+        <div class="item-card-footer mt8">
+          <span class="pill pill-green">Baixo Risco</span>
+          <span class="chevron">›</span>
+        </div>
+      </div>
+
+      <div class="item-card" onclick="openDetail('petrobras')">
+        <div class="item-card-header">
+          <div>
+            <div class="row" style="gap:8px; margin-bottom:4px">
+              <span class="tag-segment">Infra &amp; Energia</span>
+              <span class="tag-segment">Energia</span>
+            </div>
+            <div class="item-card-title">Petrobras S.A.</div>
+            <div class="item-card-meta">CNPJ 33.000.167/0001‑01</div>
+          </div>
+          <div style="text-align:right; flex-shrink:0">
+            <div class="badge badge-b">B</div>
+            <div style="font-size:24px; font-weight:700; color:var(--yellow); margin-top:2px">62</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:7px; margin-top:10px; padding-top:10px; border-top:1px solid var(--itau-border)">
+          <div style="width:24px; height:24px; border-radius:50%; background:var(--itau-orange); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:white; flex-shrink:0">RM</div>
+          <span style="font-size:11px; color:var(--itau-text-muted);">Analista:</span>
+          <span style="font-size:12px; font-weight:600;">Rafael Mol</span>
+        </div>
+        <div class="item-card-footer mt8">
+          <span class="pill pill-yellow">Em Revisão</span>
+          <span class="chevron">›</span>
+        </div>
+      </div>
+
+      <div class="item-card" onclick="openDetail('vale')">
+        <div class="item-card-header">
+          <div>
+            <div class="row" style="gap:8px; margin-bottom:4px">
+              <span class="tag-segment">Large</span>
+              <span class="tag-segment">Mineração</span>
+            </div>
+            <div class="item-card-title">Vale S.A.</div>
+            <div class="item-card-meta">CNPJ 33.592.510/0001‑54</div>
+          </div>
+          <div style="text-align:right; flex-shrink:0">
+            <div class="badge badge-b">B</div>
+            <div style="font-size:24px; font-weight:700; color:var(--yellow); margin-top:2px">58</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:7px; margin-top:10px; padding-top:10px; border-top:1px solid var(--itau-border)">
+          <div style="width:24px; height:24px; border-radius:50%; background:var(--itau-orange); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:white; flex-shrink:0">RM</div>
+          <span style="font-size:11px; color:var(--itau-text-muted);">Analista:</span>
+          <span style="font-size:12px; font-weight:600;">Rafael Mol</span>
+        </div>
+        <div class="item-card-footer mt8">
+          <span class="pill pill-red">Controvérsia Ativa</span>
+          <span class="chevron">›</span>
+        </div>
+      </div>
+
+      <div class="item-card">
+        <div class="item-card-header">
+          <div>
+            <div class="row" style="gap:8px; margin-bottom:4px">
+              <span class="tag-segment">Middle</span>
+              <span class="tag-segment">Alimentos</span>
+            </div>
+            <div class="item-card-title">Camil Alimentos S.A.</div>
+            <div class="item-card-meta">CNPJ 11.414.089/0001‑95</div>
+          </div>
+          <div style="text-align:right; flex-shrink:0">
+            <div class="badge badge-a">A</div>
+            <div style="font-size:24px; font-weight:700; color:var(--green); margin-top:2px">74</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:7px; margin-top:10px; padding-top:10px; border-top:1px solid var(--itau-border)">
+          <div style="width:24px; height:24px; border-radius:50%; background:var(--itau-orange); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:white; flex-shrink:0">DP</div>
+          <span style="font-size:11px; color:var(--itau-text-muted);">Analista:</span>
+          <span style="font-size:12px; font-weight:600;">Daniel Pollak</span>
+        </div>
+        <div class="item-card-footer mt8">
+          <span class="pill pill-green">Aprovado</span>
+          <span class="chevron">›</span>
+        </div>
+      </div>
+
+      <div class="item-card">
+        <div class="item-card-header">
+          <div>
+            <div class="row" style="gap:8px; margin-bottom:4px">
+              <span class="tag-segment">Agro</span>
+              <span class="tag-segment">Soja</span>
+            </div>
+            <div class="item-card-title">Bunge Brasil S.A.</div>
+            <div class="item-card-meta">CNPJ 84.097.346/0001‑90</div>
+          </div>
+          <div style="text-align:right; flex-shrink:0">
+            <div class="badge badge-c">C</div>
+            <div style="font-size:24px; font-weight:700; color:var(--red); margin-top:2px">41</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:7px; margin-top:10px; padding-top:10px; border-top:1px solid var(--itau-border)">
+          <div style="width:24px; height:24px; border-radius:50%; background:var(--itau-orange); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:white; flex-shrink:0">AA</div>
+          <span style="font-size:11px; color:var(--itau-text-muted);">Analista:</span>
+          <span style="font-size:12px; font-weight:600;">Aline Aguiar</span>
+        </div>
+        <div class="item-card-footer mt8">
+          <span class="pill pill-red">Risco Alto</span>
+          <span class="chevron">›</span>
+        </div>
+      </div>
+
+      <div class="item-card">
+        <div class="item-card-header">
+          <div>
+            <div class="row" style="gap:8px; margin-bottom:4px">
+              <span class="tag-segment">Infra &amp; Energia</span>
+              <span class="tag-segment">Energia Renovável</span>
+            </div>
+            <div class="item-card-title">Eneva S.A.</div>
+            <div class="item-card-meta">CNPJ 04.423.567/0001‑21</div>
+          </div>
+          <div style="text-align:right; flex-shrink:0">
+            <div class="badge badge-a">A</div>
+            <div style="font-size:24px; font-weight:700; color:var(--green); margin-top:2px">77</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:7px; margin-top:10px; padding-top:10px; border-top:1px solid var(--itau-border)">
+          <div style="width:24px; height:24px; border-radius:50%; background:var(--itau-orange); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:white; flex-shrink:0">VM</div>
+          <span style="font-size:11px; color:var(--itau-text-muted);">Analista:</span>
+          <span style="font-size:12px; font-weight:600;">Vinicius Moura</span>
+        </div>
+        <div class="item-card-footer mt8">
+          <span class="pill pill-green">Aprovado</span>
+          <span class="chevron">›</span>
+        </div>
+      </div>
+
+    </div>
+    <div style="height:20px"></div>
+  </div>
+</div>
+
+<!-- ============================================================ ALERTAS ============================================================ -->
+<div class="screen" id="screen-alertas">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Alertas & Controvérsias</div>
+      <div class="topbar-sub">12 alertas ativos</div>
+    </div>
+  </div>
+
+  <div class="filter-chips">
+    <div class="chip active">Todos</div>
+    <div class="chip">Críticos</div>
+    <div class="chip">Moderados</div>
+    <div class="chip">Mídia</div>
+    <div class="chip">Regulatório</div>
+  </div>
+
+  <div class="scroll-area" style="padding-top:0">
+    <div class="section-label">Alertas Críticos</div>
+    <div class="card-list">
+
+      <div class="alert-card alert-high">
+        <div class="flex-between">
+          <div class="alert-title">Vale S.A. — Risco Socioambiental</div>
+          <span class="badge badge-c">Crítico</span>
+        </div>
+        <div class="alert-body">Investigação do IBAMA por suposta irregularidade em licença ambiental na operação de Carajás. Prazo de resposta: 15 dias.</div>
+        <div class="alert-time">⏰ Ontem, 14h22 · Fonte: IBAMA / Folha de S.Paulo</div>
+      </div>
+
+      <div class="alert-card alert-high">
+        <div class="flex-between">
+          <div class="alert-title">Bunge Brasil — Desmatamento</div>
+          <span class="badge badge-c">Crítico</span>
+        </div>
+        <div class="alert-body">Relatório do MapBiomas aponta associação de fornecedores a áreas de desmatamento no Cerrado. Operação de crédito rural sob revisão.</div>
+        <div class="alert-time">⏰ 3 dias atrás · Fonte: MapBiomas / G1</div>
+      </div>
+
+    </div>
+
+    <div class="section-label">Alertas Moderados</div>
+    <div class="card-list">
+
+      <div class="alert-card alert-med">
+        <div class="flex-between">
+          <div class="alert-title">Petrobras — Emissões Escopo 1</div>
+          <span class="badge badge-b">Moderado</span>
+        </div>
+        <div class="alert-body">Divulgação do inventário GHG 2025 indica alta de 8% nas emissões de Escopo 1 em relação à meta declarada no plano de transição.</div>
+        <div class="alert-time">⏰ 1 semana atrás · Fonte: Relatório Anual Petrobras</div>
+      </div>
+
+      <div class="alert-card alert-med">
+        <div class="flex-between">
+          <div class="alert-title">Marfrig — Cadeia de Fornecedores</div>
+          <span class="badge badge-b">Moderado</span>
+        </div>
+        <div class="alert-body">ONG internacional publicou relatório vinculando fornecedores diretos da empresa a áreas embargadas pelo IBAMA no Pará.</div>
+        <div class="alert-time">⏰ 2 semanas atrás · Fonte: Global Witness</div>
+      </div>
+
+      <div class="alert-card alert-med">
+        <div class="flex-between">
+          <div class="alert-title">Hidrovias do Brasil — Regulatório</div>
+          <span class="badge badge-b">Moderado</span>
+        </div>
+        <div class="alert-body">Renovação de licença de operação com pendências junto à ANTAQ. Empresa apresentou documentação incompleta. Aguarda manifestação do órgão.</div>
+        <div class="alert-time">⏰ 2 semanas atrás · Fonte: ANTAQ</div>
+      </div>
+
+    </div>
+
+    <div class="section-label">Monitoramento de Mídia</div>
+    <div class="card-list">
+
+      <div class="alert-card alert-low">
+        <div class="flex-between">
+          <div class="alert-title">Suzano — Cobertura Positiva</div>
+          <span class="badge badge-aa">Info</span>
+        </div>
+        <div class="alert-body">Empresa foi reconhecida no Bloomberg Gender-Equality Index 2026. Impacto positivo na percepção ESG.</div>
+        <div class="alert-time">⏰ 4 dias atrás · Fonte: Bloomberg</div>
+      </div>
+
+    </div>
+    <div style="height:20px"></div>
+  </div>
+</div>
+
+<!-- ============================================================ DASHBOARD ============================================================ -->
+<div class="screen" id="screen-dashboard">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Dashboard</div>
+      <div class="topbar-sub">Visão consolidada da carteira</div>
+    </div>
+    <div class="topbar-action">📊</div>
+  </div>
+
+  <div class="scroll-area">
+    <div class="section-label">Indicadores Gerais</div>
+
+    <div class="dash-grid">
+      <div class="dash-tile">
+        <div class="dash-tile-icon">🌱</div>
+        <div class="dash-tile-label">Score ESG Médio</div>
+        <div class="dash-tile-value">68,4</div>
+        <div class="trend-up mt8">↑ +2,1 vs. trimestre anterior</div>
+      </div>
+      <div class="dash-tile">
+        <div class="dash-tile-icon">🏢</div>
+        <div class="dash-tile-label">Empresas Analisadas</div>
+        <div class="dash-tile-value">147</div>
+        <div class="dash-tile-sub mt8">Últimos 12 meses</div>
+      </div>
+      <div class="dash-tile">
+        <div class="dash-tile-icon">✅</div>
+        <div class="dash-tile-label">Rating AA/A</div>
+        <div class="dash-tile-value green">59%</div>
+        <div class="trend-up mt8">↑ +4pp vs. período ant.</div>
+      </div>
+      <div class="dash-tile">
+        <div class="dash-tile-icon">⚠️</div>
+        <div class="dash-tile-label">Rating C</div>
+        <div class="dash-tile-value red">18%</div>
+        <div class="trend-down mt8">↑ +1pp vs. período ant.</div>
+      </div>
+
+      <div class="dash-tile wide">
+        <div class="flex-between" style="margin-bottom:12px">
+          <div>
+            <div class="dash-tile-label">Análises Realizadas</div>
+            <div class="dash-tile-value">Últimos 6 trimestres</div>
+          </div>
+          <span class="trend-up">↑ crescimento</span>
+        </div>
+        <div class="mini-chart">
+          <div class="mini-bar" style="height:38%"></div>
+          <div class="mini-bar" style="height:48%"></div>
+          <div class="mini-bar" style="height:55%"></div>
+          <div class="mini-bar" style="height:68%"></div>
+          <div class="mini-bar" style="height:80%"></div>
+          <div class="mini-bar" style="height:100%"></div>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-top:6px">
+          <span class="text-muted">T1/25</span>
+          <span class="text-muted">T2/25</span>
+          <span class="text-muted">T3/25</span>
+          <span class="text-muted">T4/25</span>
+          <span class="text-muted">T1/26</span>
+          <span class="text-muted orange">Atual</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-top:4px">
+          <span class="text-muted">18</span>
+          <span class="text-muted">23</span>
+          <span class="text-muted">26</span>
+          <span class="text-muted">32</span>
+          <span class="text-muted">38</span>
+          <span class="orange" style="font-size:12px; font-weight:600">47</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Distribuição por segmento -->
+    <div class="section-label">Distribuição por Segmento</div>
+    <div class="card-list">
+      <div class="item-card">
+        <div class="item-card-title" style="margin-bottom:14px">Infra &amp; Energia</div>
+        <div class="maturity-row">
+          <div class="maturity-row-label"><span>Score ESG Médio</span><span class="orange">66,4</span></div>
+          <div class="full-bar"><div class="full-fill" style="width:66%"></div></div>
+        </div>
+        <div class="maturity-row">
+          <div class="maturity-row-label"><span>Empresas Analisadas</span><span>31</span></div>
+          <div class="full-bar"><div class="full-fill" style="width:21%; background:var(--blue)"></div></div>
+        </div>
+        <div class="maturity-row">
+          <div class="maturity-row-label"><span>Rating AA/A</span><span class="green">58%</span></div>
+          <div class="full-bar"><div class="full-fill" style="width:58%; background:var(--green)"></div></div>
+        </div>
+      </div>
+
+      <div class="item-card">
+        <div class="item-card-title" style="margin-bottom:14px">Large</div>
+        <div class="maturity-row">
+          <div class="maturity-row-label"><span>Score ESG Médio</span><span class="orange">72,1</span></div>
+          <div class="full-bar"><div class="full-fill" style="width:72%"></div></div>
+        </div>
+        <div class="maturity-row">
+          <div class="maturity-row-label"><span>Empresas Analisadas</span><span>45</span></div>
+          <div class="full-bar"><div class="full-fill" style="width:31%; background:var(--blue)"></div></div>
+        </div>
+        <div class="maturity-row">
+          <div class="maturity-row-label"><span>Rating AA/A</span><span class="green">65%</span></div>
+          <div class="full-bar"><div class="full-fill" style="width:65%; background:var(--green)"></div></div>
+        </div>
+      </div>
+
+      <div class="item-card">
+        <div class="item-card-title" style="margin-bottom:14px">Middle</div>
+        <div class="maturity-row">
+          <div class="maturity-row-label"><span>Score ESG Médio</span><span class="orange">64,8</span></div>
+          <div class="full-bar"><div class="full-fill" style="width:64%"></div></div>
+        </div>
+        <div class="maturity-row">
+          <div class="maturity-row-label"><span>Empresas Analisadas</span><span>44</span></div>
+          <div class="full-bar"><div class="full-fill" style="width:30%; background:var(--blue)"></div></div>
+        </div>
+        <div class="maturity-row">
+          <div class="maturity-row-label"><span>Rating AA/A</span><span class="green">54%</span></div>
+          <div class="full-bar"><div class="full-fill" style="width:54%; background:var(--green)"></div></div>
+        </div>
+      </div>
+
+      <div class="item-card">
+        <div class="item-card-title" style="margin-bottom:14px">Agro</div>
+        <div class="maturity-row">
+          <div class="maturity-row-label"><span>Score ESG Médio</span><span class="yellow">58,3</span></div>
+          <div class="full-bar"><div class="full-fill" style="width:58%; background:var(--yellow)"></div></div>
+        </div>
+        <div class="maturity-row">
+          <div class="maturity-row-label"><span>Empresas Analisadas</span><span>27</span></div>
+          <div class="full-bar"><div class="full-fill" style="width:18%; background:var(--blue)"></div></div>
+        </div>
+        <div class="maturity-row">
+          <div class="maturity-row-label"><span>Rating AA/A</span><span class="yellow">41%</span></div>
+          <div class="full-bar"><div class="full-fill" style="width:41%; background:var(--yellow)"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:20px"></div>
+  </div>
+</div>
+
+<!-- ============================================================ PERFIL ============================================================ -->
+<div class="screen" id="screen-perfil">
+  <div class="profile-header">
+    <div class="profile-avatar">GS</div>
+    <div class="profile-name">Gerente ESG</div>
+    <div class="profile-role">Analista Sênior de Crédito ESG</div>
+    <div class="profile-area">🌱 Crédito ESG · Itaú BBA</div>
+  </div>
+
+  <div class="scroll-area" style="padding-top: 0">
+    <div class="section-label">Meu Time</div>
+    <div class="menu-list">
+      <div class="menu-item">
+        <div class="menu-item-left">
+          <div class="menu-item-icon">👤</div>
+          <div>
+            <div class="menu-item-title">Análise de Risco ESG</div>
+            <div class="menu-item-sub">4 analistas · 147 empresas cobertas</div>
+          </div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="menu-item">
+        <div class="menu-item-left">
+          <div class="menu-item-icon">🌡️</div>
+          <div>
+            <div class="menu-item-title">Risco Climático</div>
+            <div class="menu-item-sub">2 especialistas · Físico e Transição</div>
+          </div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="menu-item">
+        <div class="menu-item-left">
+          <div class="menu-item-icon">📰</div>
+          <div>
+            <div class="menu-item-title">Monitoramento de Mídia</div>
+            <div class="menu-item-sub">2 analistas · Controvérsias e alertas</div>
+          </div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+    </div>
+
+    <div class="section-label">Análises do Time</div>
+    <div class="menu-list">
+      <div class="menu-item" onclick="openModal('modal-tipos')">
+        <div class="menu-item-left">
+          <div class="menu-item-icon">📊</div>
+          <div>
+            <div class="menu-item-title">Tipos de Análise</div>
+            <div class="menu-item-sub">Metodologias e frameworks</div>
+          </div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="menu-item" onclick="openModal('modal-metodologia')">
+        <div class="menu-item-left">
+          <div class="menu-item-icon">📋</div>
+          <div>
+            <div class="menu-item-title">Metodologia de Rating</div>
+            <div class="menu-item-sub">AA, A, B, C · Critérios e pesos</div>
+          </div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+    </div>
+
+    <div class="section-label">Configurações</div>
+    <div class="menu-list">
+      <div class="menu-item">
+        <div class="menu-item-left">
+          <div class="menu-item-icon">🔔</div>
+          <div>
+            <div class="menu-item-title">Notificações</div>
+            <div class="menu-item-sub">Alertas e atualizações</div>
+          </div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="menu-item">
+        <div class="menu-item-left">
+          <div class="menu-item-icon">🌙</div>
+          <div>
+            <div class="menu-item-title">Tema</div>
+            <div class="menu-item-sub">Escuro (padrão)</div>
+          </div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+      <div class="menu-item">
+        <div class="menu-item-left">
+          <div class="menu-item-icon">ℹ️</div>
+          <div>
+            <div class="menu-item-title">Versão do Aplicativo</div>
+            <div class="menu-item-sub">ESG Advisor v1.0 · Março 2026</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:20px"></div>
+  </div>
+</div>
+
+<!-- ============================================================ DETAIL — PETROBRAS ============================================================ -->
+<div class="screen" id="screen-detail-petrobras">
+  <div class="detail-hero">
+    <button class="detail-back" onclick="closeDetail()">‹ Voltar</button>
+    <div class="row" style="gap:10px; margin-bottom:8px">
+      <span class="tag-segment">Infra &amp; Energia</span>
+      <span class="tag-segment">Energia</span>
+    </div>
+    <div class="detail-company">Petrobras S.A.</div>
+    <div class="detail-sector">CNPJ 33.000.167/0001‑01 · Análise atualizada em 18/03/2026</div>
+    <div style="display:flex; align-items:center; gap:8px; margin-top:10px">
+      <div style="width:28px; height:28px; border-radius:50%; background:var(--itau-orange); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:white; flex-shrink:0">RM</div>
+      <div>
+        <div style="font-size:11px; color:var(--itau-text-muted);">Analista Responsável</div>
+        <div style="font-size:13px; font-weight:600;">Rafael Mol</div>
+      </div>
+    </div>
+    <div class="detail-scores">
+      <div class="detail-score-box">
+        <div class="detail-score-label">Ambiental</div>
+        <div class="detail-score-val" style="color:var(--yellow)">55</div>
+        <div class="detail-score-grade yellow">Moderado</div>
+      </div>
+      <div class="detail-score-box">
+        <div class="detail-score-label">Social</div>
+        <div class="detail-score-val" style="color:var(--green)">70</div>
+        <div class="detail-score-grade green">Adequado</div>
+      </div>
+      <div class="detail-score-box">
+        <div class="detail-score-label">Governança</div>
+        <div class="detail-score-val" style="color:var(--yellow)">62</div>
+        <div class="detail-score-grade yellow">Moderado</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="detail-tabs" id="tabs-petrobras">
+    <div class="detail-tab active" onclick="switchTab('petrobras',0)">Resumo</div>
+    <div class="detail-tab" onclick="switchTab('petrobras',1)">Climático</div>
+    <div class="detail-tab" onclick="switchTab('petrobras',2)">Governança</div>
+    <div class="detail-tab" onclick="switchTab('petrobras',3)">Mídia</div>
+  </div>
+
+  <div class="detail-body" id="body-petrobras">
+    <div class="tab-pane active" id="tab-petrobras-0">
+      <div class="detail-section-title">Visão Geral ESG</div>
+      <div class="info-row">
+        <span class="info-key">Rating ESG</span>
+        <span class="badge badge-b">B · Score 62</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Segmento</span>
+        <span class="info-val">Infra &amp; Energia</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Setor</span>
+        <span class="info-val">Petróleo, Gás e Biocombustíveis</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Maturidade ESG</span>
+        <span class="info-val orange">Desenvolvendo</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Risco Climático Físico</span>
+        <span class="info-val red">Alto</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Controvérsias Abertas</span>
+        <span class="info-val yellow">1 moderada</span>
+      </div>
+      <div class="divider"></div>
+      <div class="detail-section-title">Maturidade ESG</div>
+      <div class="maturity-row">
+        <div class="maturity-row-label"><span>Estratégia ESG</span><span>65/100</span></div>
+        <div class="full-bar"><div class="full-fill" style="width:65%"></div></div>
+      </div>
+      <div class="maturity-row">
+        <div class="maturity-row-label"><span>Gestão de Riscos</span><span>58/100</span></div>
+        <div class="full-bar"><div class="full-fill" style="width:58%"></div></div>
+      </div>
+      <div class="maturity-row">
+        <div class="maturity-row-label"><span>Divulgação e Reporte</span><span>72/100</span></div>
+        <div class="full-bar"><div class="full-fill" style="width:72%"></div></div>
+      </div>
+      <div class="maturity-row">
+        <div class="maturity-row-label"><span>Engajamento Stakeholders</span><span>60/100</span></div>
+        <div class="full-bar"><div class="full-fill" style="width:60%"></div></div>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="tab-petrobras-1" style="display:none">
+      <div class="detail-section-title">Risco Climático</div>
+      <div class="info-row">
+        <span class="info-key">Alinhamento TCFD</span>
+        <span class="info-val yellow">Parcial</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Meta de Emissões (Escopo 1+2)</span>
+        <span class="info-val">Net Zero até 2050</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Emissões Escopo 1 (2025)</span>
+        <span class="info-val red">+8% vs meta</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Plano de Transição</span>
+        <span class="info-val yellow">Em desenvolvimento</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Investimento Renov. (2025)</span>
+        <span class="info-val">R$ 4,2 bi</span>
+      </div>
+      <div class="divider"></div>
+      <div class="detail-section-title">Vulnerabilidades Físicas</div>
+      <div class="alert-card alert-high mt8">
+        <div class="alert-title">Plataformas — Risco de Tempestades</div>
+        <div class="alert-body">Aumento de frequência e intensidade de eventos climáticos extremos no Atlântico Sul representa risco material às operações offshore.</div>
+      </div>
+      <div class="alert-card alert-med mt12">
+        <div class="alert-title">Refinarias Costeiras — Risco Hídrico</div>
+        <div class="alert-body">3 das 6 refinarias localizam-se em regiões com projeção de estresse hídrico moderado-alto até 2035 (cenário IPCC RCP 4.5).</div>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="tab-petrobras-2" style="display:none">
+      <div class="detail-section-title">Governança Corporativa</div>
+      <div class="info-row">
+        <span class="info-key">Nível de Governança</span>
+        <span class="info-val">Novo Mercado (B3)</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Independência do Conselho</span>
+        <span class="info-val green">62% independentes</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Diversidade — Conselho</span>
+        <span class="info-val yellow">28% mulheres</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Comitê ESG</span>
+        <span class="info-val green">Ativo desde 2021</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Remuneração vinculada ESG</span>
+        <span class="info-val green">Sim (15% variável)</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">Relatório Integrado</span>
+        <span class="info-val green">GRI + SASB + TCFD</span>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="tab-petrobras-3" style="display:none">
+      <div class="detail-section-title">Monitoramento de Mídia</div>
+      <div class="alert-card alert-med">
+        <div class="alert-title">Emissões acima da meta declarada</div>
+        <div class="alert-body">Divulgação do inventário GHG 2025 indica alta de 8% nas emissões de Escopo 1 em relação à meta declarada no plano de transição climática.</div>
+        <div class="alert-time">⏰ 1 semana atrás · Fonte: Relatório Anual 2025</div>
+      </div>
+      <div class="alert-card alert-low mt12">
+        <div class="alert-title">Investimento em Energias Renováveis</div>
+        <div class="alert-body">Anúncio de ampliação do portfólio de energias renováveis com investimento de R$ 4,2 bilhões em 2025 repercute positivamente.</div>
+        <div class="alert-time">⏰ 3 semanas atrás · Fonte: Valor Econômico</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ DETAIL — VALE ============================================================ -->
+<div class="screen" id="screen-detail-vale">
+  <div class="detail-hero">
+    <button class="detail-back" onclick="closeDetail()">‹ Voltar</button>
+    <div class="row" style="gap:10px; margin-bottom:8px">
+      <span class="tag-segment">Large</span>
+      <span class="tag-segment">Mineração</span>
+    </div>
+    <div class="detail-company">Vale S.A.</div>
+    <div class="detail-sector">CNPJ 33.592.510/0001‑54 · Análise atualizada em 15/03/2026</div>
+    <div style="display:flex; align-items:center; gap:8px; margin-top:10px">
+      <div style="width:28px; height:28px; border-radius:50%; background:var(--itau-orange); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:white; flex-shrink:0">RM</div>
+      <div>
+        <div style="font-size:11px; color:var(--itau-text-muted);">Analista Responsável</div>
+        <div style="font-size:13px; font-weight:600;">Rafael Mol</div>
+      </div>
+    </div>
+    <div class="detail-scores">
+      <div class="detail-score-box">
+        <div class="detail-score-label">Ambiental</div>
+        <div class="detail-score-val" style="color:var(--red)">48</div>
+        <div class="detail-score-grade red">Insuficiente</div>
+      </div>
+      <div class="detail-score-box">
+        <div class="detail-score-label">Social</div>
+        <div class="detail-score-val" style="color:var(--yellow)">60</div>
+        <div class="detail-score-grade yellow">Moderado</div>
+      </div>
+      <div class="detail-score-box">
+        <div class="detail-score-label">Governança</div>
+        <div class="detail-score-val" style="color:var(--yellow)">65</div>
+        <div class="detail-score-grade yellow">Moderado</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="detail-tabs" id="tabs-vale">
+    <div class="detail-tab active" onclick="switchTab('vale',0)">Resumo</div>
+    <div class="detail-tab" onclick="switchTab('vale',1)">Controvérsias</div>
+    <div class="detail-tab" onclick="switchTab('vale',2)">Climático</div>
+  </div>
+
+  <div class="detail-body" id="body-vale">
+    <div class="tab-pane active" id="tab-vale-0">
+      <div class="detail-section-title">Visão Geral ESG</div>
+      <div class="info-row"><span class="info-key">Rating ESG</span><span class="badge badge-b">B · Score 58</span></div>
+      <div class="info-row"><span class="info-key">Segmento</span><span class="info-val">Large</span></div>
+      <div class="info-row"><span class="info-key">Setor</span><span class="info-val">Mineração</span></div>
+      <div class="info-row"><span class="info-key">Maturidade ESG</span><span class="info-val yellow">Desenvolvendo</span></div>
+      <div class="info-row"><span class="info-key">Risco Climático Físico</span><span class="info-val yellow">Médio</span></div>
+      <div class="info-row"><span class="info-key">Controvérsias Abertas</span><span class="info-val red">1 crítica</span></div>
+      <div class="info-row"><span class="info-key">Pendências Regulatórias</span><span class="info-val red">IBAMA — em aberto</span></div>
+    </div>
+
+    <div class="tab-pane" id="tab-vale-1" style="display:none">
+      <div class="detail-section-title">Controvérsias Ativas</div>
+      <div class="alert-card alert-high">
+        <div class="alert-title">Investigação IBAMA — Carajás</div>
+        <div class="alert-body">Autoridade ambiental iniciou investigação sobre suposta irregularidade em licença de operação no complexo de Carajás (PA). A empresa negou as alegações e apresentou documentação ao órgão. Prazo de resposta: 15 dias a partir de 18/03/2026.</div>
+        <div class="alert-time">⏰ Ontem · Fonte: IBAMA / Folha de S.Paulo</div>
+      </div>
+      <div class="divider"></div>
+      <div class="detail-section-title">Histórico de Controvérsias</div>
+      <div class="info-row"><span class="info-key">2024 — Rompimento Barragem</span><span class="info-val red">Resolvido</span></div>
+      <div class="info-row"><span class="info-key">2023 — Trabalho Escravo</span><span class="info-val yellow">Monitorando</span></div>
+      <div class="info-row"><span class="info-key">2022 — Passivo Ambiental</span><span class="info-val green">Encerrado</span></div>
+    </div>
+
+    <div class="tab-pane" id="tab-vale-2" style="display:none">
+      <div class="detail-section-title">Risco Climático</div>
+      <div class="info-row"><span class="info-key">Alinhamento TCFD</span><span class="info-val yellow">Parcial</span></div>
+      <div class="info-row"><span class="info-key">Meta Emissões</span><span class="info-val">Net Zero até 2050</span></div>
+      <div class="info-row"><span class="info-key">Risco Hídrico</span><span class="info-val red">Alto — Amazônia</span></div>
+      <div class="info-row"><span class="info-key">Plano de Transição</span><span class="info-val yellow">Em aprovação</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ DETAIL — SUZANO ============================================================ -->
+<div class="screen" id="screen-detail-suzano">
+  <div class="detail-hero">
+    <button class="detail-back" onclick="closeDetail()">‹ Voltar</button>
+    <div class="row" style="gap:10px; margin-bottom:8px">
+      <span class="tag-segment">Large</span>
+      <span class="tag-segment">Celulose</span>
+    </div>
+    <div class="detail-company">Suzano S.A.</div>
+    <div class="detail-sector">CNPJ 16.404.287/0001‑55 · Análise atualizada em 13/03/2026</div>
+    <div style="display:flex; align-items:center; gap:8px; margin-top:10px">
+      <div style="width:28px; height:28px; border-radius:50%; background:var(--itau-orange); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:white; flex-shrink:0">AA</div>
+      <div>
+        <div style="font-size:11px; color:var(--itau-text-muted);">Analista Responsável</div>
+        <div style="font-size:13px; font-weight:600;">Aline Aguiar</div>
+      </div>
+    </div>
+    <div class="detail-scores">
+      <div class="detail-score-box">
+        <div class="detail-score-label">Ambiental</div>
+        <div class="detail-score-val" style="color:var(--green)">90</div>
+        <div class="detail-score-grade green">Excelente</div>
+      </div>
+      <div class="detail-score-box">
+        <div class="detail-score-label">Social</div>
+        <div class="detail-score-val" style="color:var(--green)">80</div>
+        <div class="detail-score-grade green">Adequado</div>
+      </div>
+      <div class="detail-score-box">
+        <div class="detail-score-label">Governança</div>
+        <div class="detail-score-val" style="color:var(--green)">82</div>
+        <div class="detail-score-grade green">Adequado</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="detail-tabs" id="tabs-suzano">
+    <div class="detail-tab active" onclick="switchTab('suzano',0)">Resumo</div>
+    <div class="detail-tab" onclick="switchTab('suzano',1)">Climático</div>
+    <div class="detail-tab" onclick="switchTab('suzano',2)">Social</div>
+  </div>
+
+  <div class="detail-body" id="body-suzano">
+    <div class="tab-pane active" id="tab-suzano-0">
+      <div class="detail-section-title">Visão Geral ESG</div>
+      <div class="info-row"><span class="info-key">Rating ESG</span><span class="badge badge-aa">AA · Score 84</span></div>
+      <div class="info-row"><span class="info-key">Maturidade ESG</span><span class="info-val green">Avançado</span></div>
+      <div class="info-row"><span class="info-key">Risco Climático</span><span class="info-val green">Baixo</span></div>
+      <div class="info-row"><span class="info-key">Controvérsias</span><span class="info-val green">Nenhuma ativa</span></div>
+      <div class="info-row"><span class="info-key">Recomendação</span><span class="info-val green">Aprovado</span></div>
+      <div class="divider"></div>
+      <div class="detail-section-title">Maturidade ESG</div>
+      <div class="maturity-row">
+        <div class="maturity-row-label"><span>Estratégia ESG</span><span>88/100</span></div>
+        <div class="full-bar"><div class="full-fill" style="width:88%"></div></div>
+      </div>
+      <div class="maturity-row">
+        <div class="maturity-row-label"><span>Gestão de Riscos</span><span>85/100</span></div>
+        <div class="full-bar"><div class="full-fill" style="width:85%"></div></div>
+      </div>
+      <div class="maturity-row">
+        <div class="maturity-row-label"><span>Divulgação e Reporte</span><span>92/100</span></div>
+        <div class="full-bar"><div class="full-fill" style="width:92%"></div></div>
+      </div>
+      <div class="maturity-row">
+        <div class="maturity-row-label"><span>Engajamento</span><span>80/100</span></div>
+        <div class="full-bar"><div class="full-fill" style="width:80%"></div></div>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="tab-suzano-1" style="display:none">
+      <div class="detail-section-title">Risco Climático</div>
+      <div class="info-row"><span class="info-key">Alinhamento TCFD</span><span class="info-val green">Completo</span></div>
+      <div class="info-row"><span class="info-key">Meta Emissões</span><span class="info-val green">Net Zero até 2045</span></div>
+      <div class="info-row"><span class="info-key">Sequestro de Carbono</span><span class="info-val green">Crédito líquido positivo</span></div>
+      <div class="info-row"><span class="info-key">Risco Hídrico</span><span class="info-val green">Baixo</span></div>
+      <div class="info-row"><span class="info-key">Plano de Transição</span><span class="info-val green">Aprovado e vigente</span></div>
+    </div>
+
+    <div class="tab-pane" id="tab-suzano-2" style="display:none">
+      <div class="detail-section-title">Indicadores Sociais</div>
+      <div class="info-row"><span class="info-key">Bloomberg GEI 2026</span><span class="info-val green">Reconhecida</span></div>
+      <div class="info-row"><span class="info-key">Diversidade — Conselho</span><span class="info-val green">40% mulheres</span></div>
+      <div class="info-row"><span class="info-key">Comunidades Locais</span><span class="info-val green">45 programas ativos</span></div>
+      <div class="info-row"><span class="info-key">Segurança no Trabalho</span><span class="info-val green">TRIR: 0,8 (2025)</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ BOTTOM NAV ============================================================ -->
+<nav class="bottom-nav" id="main-nav">
+  <div class="nav-item active" id="nav-home" onclick="navigate('home')">
+    <span class="nav-icon">🏠</span>
+    <span class="nav-label">Início</span>
+    <div class="nav-dot"></div>
+  </div>
+  <div class="nav-item" id="nav-empresas" onclick="navigate('empresas')">
+    <span class="nav-icon">🏢</span>
+    <span class="nav-label">Empresas</span>
+    <div class="nav-dot"></div>
+  </div>
+  <div class="nav-item" id="nav-alertas" onclick="navigate('alertas')">
+    <span class="nav-icon">⚠️</span>
+    <span class="nav-label">Alertas</span>
+    <div class="nav-dot"></div>
+  </div>
+  <div class="nav-item" id="nav-dashboard" onclick="navigate('dashboard')">
+    <span class="nav-icon">📊</span>
+    <span class="nav-label">Dashboard</span>
+    <div class="nav-dot"></div>
+  </div>
+  <div class="nav-item" id="nav-perfil" onclick="navigate('perfil')">
+    <span class="nav-icon">👤</span>
+    <span class="nav-label">Perfil</span>
+    <div class="nav-dot"></div>
+  </div>
+</nav>
+
+<!-- ============================================================ MODALS ============================================================ -->
+<div class="modal-overlay" id="modal-notif" onclick="if(event.target===this)closeModal('modal-notif')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Notificações</div>
+    <div class="alert-card alert-high" style="margin-bottom:12px">
+      <div class="alert-title">Vale S.A. — Investigação IBAMA</div>
+      <div class="alert-body">Nova investigação aberta. Requer atenção imediata.</div>
+      <div class="alert-time">Ontem, 14h22</div>
+    </div>
+    <div class="alert-card alert-med" style="margin-bottom:12px">
+      <div class="alert-title">Petrobras — Emissões acima da meta</div>
+      <div class="alert-body">Inventário GHG 2025 divulgado com desvio de +8%.</div>
+      <div class="alert-time">1 semana atrás</div>
+    </div>
+    <div class="alert-card alert-low" style="margin-bottom:12px">
+      <div class="alert-title">Suzano — Reconhecimento Bloomberg</div>
+      <div class="alert-body">Inclusão no Bloomberg GEI 2026 com impacto positivo.</div>
+      <div class="alert-time">4 dias atrás</div>
+    </div>
+    <button class="btn-primary" onclick="closeModal('modal-notif')">Fechar</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-tipos" onclick="if(event.target===this)closeModal('modal-tipos')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Tipos de Análise ESG</div>
+    <div class="item-card" style="margin-bottom:10px">
+      <div class="item-card-title">🌱 Análise de Risco ESG</div>
+      <div class="item-card-body">Avaliação dos riscos ambientais, sociais e de governança com base em frameworks internacionais (GRI, SASB, TCFD). Score de 0 a 100.</div>
+    </div>
+    <div class="item-card" style="margin-bottom:10px">
+      <div class="item-card-title">🌡️ Risco Climático e de Transição</div>
+      <div class="item-card-body">Avaliação de exposição a riscos físicos (eventos extremos, estresse hídrico) e de transição (carbono, regulatório) conforme TCFD.</div>
+    </div>
+    <div class="item-card" style="margin-bottom:10px">
+      <div class="item-card-title">📋 Maturidade ESG</div>
+      <div class="item-card-body">Diagnóstico do estágio de desenvolvimento das práticas ESG do cliente: Inicial, Desenvolvendo, Adequado ou Avançado.</div>
+    </div>
+    <div class="item-card" style="margin-bottom:10px">
+      <div class="item-card-title">📰 Monitoramento de Mídia</div>
+      <div class="item-card-body">Varredura contínua de mídias e fontes regulatórias para identificar controvérsias, investigações e percepção reputacional.</div>
+    </div>
+    <div class="item-card" style="margin-bottom:16px">
+      <div class="item-card-title">📑 Avaliação Documental</div>
+      <div class="item-card-body">Análise de licenças, certificações, relatórios de sustentabilidade e documentos regulatórios para validação ESG.</div>
+    </div>
+    <button class="btn-primary" onclick="closeModal('modal-tipos')">Fechar</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-metodologia" onclick="if(event.target===this)closeModal('modal-metodologia')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Metodologia de Rating ESG</div>
+    <div class="info-row"><span class="info-key">Dimensão Ambiental (E)</span><span class="info-val">40%</span></div>
+    <div class="info-row"><span class="info-key">Dimensão Social (S)</span><span class="info-val">30%</span></div>
+    <div class="info-row"><span class="info-key">Dimensão Governança (G)</span><span class="info-val">30%</span></div>
+    <div class="divider"></div>
+    <div class="info-row"><span class="badge badge-aa">AA</span><span class="info-val">Score ≥ 80 · Baixo Risco</span></div>
+    <div class="info-row"><span class="badge badge-a">A</span><span class="info-val">Score 65–79 · Risco Moderado-Baixo</span></div>
+    <div class="info-row"><span class="badge badge-b">B</span><span class="info-val">Score 45–64 · Risco Moderado</span></div>
+    <div class="info-row"><span class="badge badge-c">C</span><span class="info-val">Score &lt; 45 · Risco Alto</span></div>
+    <div style="height:16px"></div>
+    <button class="btn-primary" onclick="closeModal('modal-metodologia')">Fechar</button>
+  </div>
+</div>
+
+<script>
+  // --- Splash: múltiplos fallbacks para garantir que some em qualquer ambiente ---
+  function hideSplash() {
+    var s = document.getElementById('splash');
+    if (s) { s.style.opacity = '0'; s.style.pointerEvents = 'none';
+      setTimeout(function(){ s.style.display = 'none'; }, 500);
+    }
+  }
+  // Tenta após 2s, com fallback em 3s e 5s por segurança
+  setTimeout(hideSplash, 2000);
+  setTimeout(hideSplash, 3000);
+  setTimeout(hideSplash, 5000);
+  // Fallback: qualquer toque na tela também esconde o splash
+  document.addEventListener('touchstart', hideSplash, { once: true });
+  document.addEventListener('click', hideSplash, { once: true });
+
+
+  // --- Navigation ---
+  let currentScreen = 'home';
+  let prevScreen = null;
+  let isDetail = false;
+
+  function navigate(name) {
+    if (isDetail) {
+      closeDetail(false);
+      isDetail = false;
+    }
+    const screens = document.querySelectorAll('.screen');
+    screens.forEach(s => { s.classList.remove('active'); s.style.display = 'none'; });
+    const target = document.getElementById('screen-' + name);
+    if (target) { target.style.display = 'flex'; requestAnimationFrame(() => target.classList.add('active')); }
+    currentScreen = name;
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(n => n.classList.remove('active'));
+    const navTarget = document.getElementById('nav-' + name);
+    if (navTarget) navTarget.classList.add('active');
+    document.getElementById('main-nav').style.display = 'flex';
+  }
+
+  function openDetail(company) {
+    prevScreen = currentScreen;
+    isDetail = true;
+    const screens = document.querySelectorAll('.screen');
+    screens.forEach(s => { s.classList.remove('active'); s.style.display = 'none'; });
+    const detail = document.getElementById('screen-detail-' + company);
+    if (detail) { detail.style.display = 'flex'; requestAnimationFrame(() => detail.classList.add('active')); }
+    document.getElementById('main-nav').style.display = 'none';
+  }
+
+  function closeDetail(restore = true) {
+    isDetail = false;
+    document.getElementById('main-nav').style.display = 'flex';
+    if (restore && prevScreen) navigate(prevScreen);
+  }
+
+  function switchTab(company, idx) {
+    const tabs = document.querySelectorAll('#tabs-' + company + ' .detail-tab');
+    tabs.forEach((t, i) => t.classList.toggle('active', i === idx));
+    const body = document.getElementById('body-' + company);
+    body.querySelectorAll('.tab-pane').forEach((p, i) => {
+      p.style.display = i === idx ? 'block' : 'none';
+    });
+  }
+
+  function openModal(id) {
+    document.getElementById(id).classList.add('open');
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+</script>
+</body>
+</html>
